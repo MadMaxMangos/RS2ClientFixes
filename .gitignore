@@ -1,0 +1,22 @@
+# Local SDK, compiler output, and trial evidence
+/work/
+/sdk/
+/evidence/
+/stageA/superseded/
+*.log
+*.dmp
+*.etl
+*.pdb
+*.idb
+*.i64
+*.bndb
+*.zip
+*.7z
+
+# Editor and operating-system files
+.vs/
+.vscode/
+*.user
+*.suo
+Thumbs.db
+Desktop.ini
