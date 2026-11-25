@@ -2,7 +2,7 @@
 
 RS2ClientFixes is an UnrealScript mutator for Rising Storm 2: Vietnam. The current `v012` package is **Stage A telemetry for a training trial**. It records a joined client's Steam connection and login-status changes and reports counters to the dedicated server. Epic clients are designed to report their platform without Steam status polling. Client-supplied counters are observations, not trusted proof.
 
-Stage A does not repair Steam authentication, Leech sessions, or server-browser player counts. It does not call `Init()` or change login credentials. `v012` passed a Steam-client training trial covering redirect delivery, owner handoff, map travel, and a simulated Steam loss and return. Epic delivery and a real maintenance outage remain untested. See the [trial notes](stageA/TRIAL-NOTES-2026-11-25.md).
+Stage A does not repair Steam authentication, Leech sessions, or server-browser player counts. It does not call `Init()` or change login credentials. `v012` passed training checks for Steam and Epic redirect delivery, owner handoff, server reporting, Steam map travel, and a simulated Steam loss and return. A real maintenance outage remains untested. See the [trial notes](stageA/TRIAL-NOTES-2026-11-25.md).
 
 ## Files
 
