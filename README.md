@@ -1,35 +1,35 @@
 # RS2ClientFixes
 
-RS2ClientFixes is an UnrealScript mutator for Rising Storm 2: Vietnam. The current `v012` package is **Stage A telemetry for a training trial**. It records a joined client's Steam connection and login-status changes and reports counters to the dedicated server. Epic clients are designed to report their platform without Steam status polling. Client-supplied counters are observations, not trusted proof.
+RS2ClientFixes is a versioned UnrealScript mutator for Rising Storm 2: Vietnam dedicated servers and their joining clients. The current package, **v013 (0.1.3)**, combines client Steam-status reporting with an **operator-triggered** request to refresh a Steam client's online-subsystem login. The same `.u` file runs on both sides; Epic clients report their platform and refuse Steam refresh requests.
 
-Stage A does not repair Steam authentication, Leech sessions, or server-browser player counts. It does not call `Init()` or change login credentials. `v012` passed training checks for Steam and Epic redirect delivery, owner handoff, server reporting, Steam map travel, and a simulated Steam loss and return. A real maintenance outage remains untested. See the [trial notes](stageA/TRIAL-NOTES-2026-11-25.md).
+The server does not trigger a refresh automatically. A WebAdmin or in-game admin can use `ROMutate rs2cf status` to inspect the current map, `ROMutate rs2cf relink` to ask eligible Steam clients to refresh after a detected logout and regain, or `ROMutate rs2cf force <PlayerID>` to target one reported client during a controlled trial. `ROMutate rs2cf restartmsg` sends a restart suggestion. Client-side checks limit requests to logged-in Steam clients, require a settled regain for `relink`, and cap `Init()` at two calls per game process. The client reports the result to the server. See the [v013 operator guide](stageB/OPERATOR.md) for exact command behavior.
 
-## Files
+**Current status (27 November 2026):** v013 passed a healthy, ranked training trial with one Steam and one Epic client, including a single forced Steam `Init()` during a match, a new round, a map change, recon, redirect delivery, and ranked stats. It is now deployed on five -=PR=- servers. Startup, client joining, ranked status and reporting were observed there. **A real Steam-maintenance outage and recovery from Leech code 1 have not yet been proven.** A successful `Init()` result means a new ticket was minted; it does not by itself prove Leech accepted that ticket or that the public browser count recovered. See the [training result](stageB/TRIAL-NOTES-2026-11-27.md).
+
+## Current files
 
 | Path | Purpose |
 | --- | --- |
-| [`stageA/source/RS2ClientFixes_v012/Classes/`](stageA/source/RS2ClientFixes_v012/Classes/) | Current UnrealScript classes and package flags. |
-| [`stageA/deploy/ROGame/BrewedPC/RS2ClientFixes_v012.u`](stageA/deploy/ROGame/BrewedPC/RS2ClientFixes_v012.u) | Frozen compiled package for the current training trial. |
-| [`stageA/deploy/ROGame/Config/ROMutator_RS2ClientFixes.ini`](stageA/deploy/ROGame/Config/ROMutator_RS2ClientFixes.ini) | Server-side WebAdmin listing. |
-| [`stageA/OPERATOR.md`](stageA/OPERATOR.md) | Training setup, delivery checks, expected logs, and rollback. |
+| [`stageB/source/RS2ClientFixes_v013/Classes/`](stageB/source/RS2ClientFixes_v013/Classes/) | v013 UnrealScript source and package flags. |
+| [`stageB/deploy/ROGame/BrewedPC/RS2ClientFixes_v013.u`](stageB/deploy/ROGame/BrewedPC/RS2ClientFixes_v013.u) | Frozen v013 package, SHA-256 `C4F89112AEA0132952F17538934AD79E63E8A17DA0F9D46498A94F2B88C10E4C`. |
+| [`stageB/deploy/ROGame/Config/ROMutator_RS2ClientFixes.ini`](stageB/deploy/ROGame/Config/ROMutator_RS2ClientFixes.ini) | WebAdmin listing for v013. |
+| [`stageB/OPERATOR.md`](stageB/OPERATOR.md) | Install, commands, status checks and rollback. |
 
-## Training setup
+The older [v012 Stage A guide](stageA/OPERATOR.md) and [trial notes](stageA/TRIAL-NOTES-2026-11-25.md) are retained as history. v012 reports only; it has no relink command. Do not deploy v011: its first client link did not receive its owner.
 
-Follow the [operator guide](stageA/OPERATOR.md). On the training server, install the `.u` beside its other mutator packages in `ROGame/BrewedPCServer` and place the `.ini` in `ROGame/Config`. Add `RS2ClientFixes_v012.RS2ClientFixes` to the server's mutator list. The same `.u` reaches clients through the HTTP redirect. The package flags are `AllowDownload=True`, `ClientOptional=False`, and `ServerSideOnly=False`.
+## Installation and build identity
 
-The package is not on the current safelist. The training plan uses RS2ServerFix 0.7.5.0 with `AllowAnyMutator=True` and checks ranked status, EAC acceptance, Steam and Epic delivery, and the resulting logs. This repository does not contain RS2ServerFix or the game SDK.
+Install the `.u` with the server's other mutators in `ROGame/BrewedPCServer`, install the listing in `ROGame/Config`, and add `RS2ClientFixes_v013.RS2ClientFixes` to the existing mutator list. Clients receive the identical `.u` from the HTTP redirect. The package flags are `AllowDownload=True`, `ClientOptional=False`, and `ServerSideOnly=False`; a client that cannot download it cannot join.
 
-## Build and version identity
+This unlisted package requires a server setup that keeps ranked package checks passing. The current -=PR=- pilot uses RS2ServerFix 0.7.5.0 with `AllowAnyMutator=True`. RS2ClientFixes does not include that DLL, the game SDK, or server executable. The bypass is a separate, explicit server-side setting.
 
-The committed `v012` package was built with an isolated RS2 SDK and `VNEditor.exe make`. Its SHA-256 is:
+UE3 assigns a new package GUID at compilation. **Never rebuild under a `_vNNN` name once its package has reached a server, client or redirect.** Change the source folder, `.upkg`, observer object name, log version, compiled `.u`, listing `ClassName` and operator guide together for the next version. v013 is frozen; any code change needs v014 or later.
 
-```text
-75F19428CCCF0BF5046BD04D385E1E8A5F89D17CBF89D11FEEE2C994955767DB
-```
+## Evidence and limits
 
-UE3 assigns a new package GUID on compilation. Once a package has been served to clients, do not rebuild under the same `_vNNN` name. For the next build, increment the source package folder and `.upkg` name, the observer object name, the log version, the compiled `.u` name, the WebAdmin `ClassName`, and the operator guide together. Keep the game and SDK binaries out of this repository.
+Client counters are self-reported telemetry and can be falsified by a modified client. Server `links` and `reported` measure mutator link/report delivery, not the Leech backend's public player count. The client cannot read Leech's online status from UnrealScript; check its native log and an independent browser observer when evaluating an outage. Raw client `Launch.log` can contain Steam credentials and must be reviewed before sharing.
 
-The archived `v011` source and package are retained for comparison. Its client link failed to receive its owner in the first live trial and never reported. Do not deploy `v011` for telemetry.
+This is an independent community project, not an official Tripwire Interactive release.
 
 ## License
 
